@@ -24,13 +24,8 @@ def create_app(test_config=None):
     """
     @app.after_request
     def after_request(response):
-        response.headers.add(
-            'Access-Control-Allow-Headers', 'Content-Type, Authorization'
-            )
-        response.headers.add(
-            'Access-Control-Allow-Methods',
-            'GET, PUT, POST, PATCH, DELETE, OPTIONS'
-            )
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
+        response.headers.add('Access-Control-Allow-Methods', 'GET, PUT, POST, PATCH, DELETE, OPTIONS')
         return response
 
     """
@@ -60,26 +55,22 @@ def create_app(test_config=None):
         start_page = (page - 1) * QUESTIONS_PER_PAGE
         end_page = start_page + QUESTIONS_PER_PAGE
         ques_result = []
-        questions_query = Question.query.order_by(
-                Question.id
-            ).limit(items_limit).offset(current_index * items_limit).all()
-        formatted_questions = [
-            question_query.format() for question_query in questions_query
-            ]
+        questions_query = Question.query.order_by(Question.id).limit(items_limit).offset(current_index * items_limit).all()
+        formatted_questions = [ question_query.format() for question_query in questions_query ]
         categories_query = Category.query.all()
         cat_result = {}
         for category_query in categories_query:
             cat_result[category_query.id] = category_query.type
-        if len(formatted_questions[start_page:end_page]) != 0:
-            result = {
-                "questions": formatted_questions,
-                "total_questions": len(questions_query),
-                "current_category": "",
-                "categories": cat_result
-            }
-            return jsonify(result)
-        else:
+        if len(formatted_questions[start_page:end_page]) == 0:
             abort(404)
+        
+        result = {
+            "questions": formatted_questions,
+            "total_questions": len(questions_query),
+            "current_category": "",
+            "categories": cat_result
+        }
+        return jsonify(result)
 
     """
     @TODO:
