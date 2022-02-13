@@ -14,38 +14,38 @@ def create_app(test_config=None):
     setup_db(app)
 
     """
-    @TODO: Set up CORS. Allow '*' for origins. Delete the sample route after completing the TODOs
+    Set up CORS. Allow '*' for origins. Delete the sample route after completing the TODOs
     """
     cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
     
 
     """
-    @TODO: Use the after_request decorator to set Access-Control-Allow
+    Use the after_request decorator to set Access-Control-Allow
     """
     @app.after_request
-    def after_request(response):
+    def afterRequest(response):
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type, Authorization')
         response.headers.add('Access-Control-Allow-Methods', 'GET, PUT, POST, PATCH, DELETE, OPTIONS')
         return response
 
     """
-    @TODO:
-    Create an endpoint to handle GET requests
-    for all available categories.
+    endpoint to handle GET requests for all available categories.
     """
+    @app.route("/categories")
+    def getCategories():
+        categories = Category.query.all()
+
+        if len(categories) == 0:
+            abort(404)
+        result = {}
+        for category in categories:
+            result[category.id] = category.type
+        
+        return jsonify({'categories': result})
 
 
     """
-    @TODO:
-    Create an endpoint to handle GET requests for questions,
-    including pagination (every 10 questions).
-    This endpoint should return a list of questions,
-    number of total questions, current category, categories.
-
-    TEST: At this point, when you start the application
-    you should see questions and categories generated,
-    ten questions per page and pagination at the bottom of the screen for three pages.
-    Clicking on the page numbers should update the questions.
+    endpoint to handle GET requests for questions,
     """
     @app.route("/questions")
     def getQuestions():
@@ -55,41 +55,62 @@ def create_app(test_config=None):
         start_page = (page - 1) * QUESTIONS_PER_PAGE
         end_page = start_page + QUESTIONS_PER_PAGE
         ques_result = []
-        questions_query = Question.query.order_by(Question.id).limit(items_limit).offset(current_index * items_limit).all()
-        formatted_questions = [ question_query.format() for question_query in questions_query ]
-        categories_query = Category.query.all()
+        questions = Question.query.order_by(
+                Question.id
+            ).limit(items_limit).offset(current_index * items_limit).all()
+        formatted_questions = [ question.format() for question in questions ]
+        categories = Category.query.all()
         cat_result = {}
-        for category_query in categories_query:
-            cat_result[category_query.id] = category_query.type
+        for category in categories:
+            cat_result[category.id] = category.type
         if len(formatted_questions[start_page:end_page]) == 0:
             abort(404)
-        
+            
         result = {
             "questions": formatted_questions,
-            "total_questions": len(questions_query),
+            "total_questions": len(questions),
             "current_category": "",
             "categories": cat_result
         }
         return jsonify(result)
 
     """
-    @TODO:
-    Create an endpoint to DELETE question using a question ID.
-
-    TEST: When you click the trash icon next to a question, the question will be removed.
-    This removal will persist in the database and when you refresh the page.
+    endpoint to DELETE question using a question ID.
     """
+    @app.route("/questions/<int:id>", methods=["DELETE"])
+    def deleteQuestion(id):
+        try:
+            question = Question.query.filter(Question.id == id).first()
+            question.delete()
+            questions = Question.query.all()
+            formatted_questions = [
+                question.format() for question in questions
+                ]
+            return jsonify({"questions": formatted_questions})
+        except Exception:
+            abort(500)
 
     """
-    @TODO:
-    Create an endpoint to POST a new question,
-    which will require the question and answer text,
-    category, and difficulty score.
-
-    TEST: When you submit a question on the "Add" tab,
-    the form will clear and the question will appear at the end of the last page
-    of the questions list in the "List" tab.
+    endpoint to POST a new question
     """
+    
+    @app.route('/questions', methods=['POST'])
+    def create_question():
+        body = request.get_json()
+        question = Question(
+            question = body.get('question', None), 
+            answer = body.get('answer', None), 
+            category = body.get('category', None), 
+            difficulty =body.get('difficulty', None))
+        question.insert()
+
+
+        return jsonify({
+            "success": True,
+            "created": question.id
+        })
+    
+    
 
     """
     @TODO:
