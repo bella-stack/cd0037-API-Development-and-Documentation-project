@@ -16,10 +16,22 @@ def create_app(test_config=None):
     """
     @TODO: Set up CORS. Allow '*' for origins. Delete the sample route after completing the TODOs
     """
+    cors = CORS(app, resources={r"/api/*": {"origins": "*"}})
+    
 
     """
     @TODO: Use the after_request decorator to set Access-Control-Allow
     """
+    @app.after_request
+    def after_request(response):
+        response.headers.add(
+            'Access-Control-Allow-Headers', 'Content-Type, Authorization'
+            )
+        response.headers.add(
+            'Access-Control-Allow-Methods',
+            'GET, PUT, POST, PATCH, DELETE, OPTIONS'
+            )
+        return response
 
     """
     @TODO:
@@ -40,6 +52,34 @@ def create_app(test_config=None):
     ten questions per page and pagination at the bottom of the screen for three pages.
     Clicking on the page numbers should update the questions.
     """
+    @app.route("/questions")
+    def getQuestions():
+        items_limit = request.args.get('limit', QUESTIONS_PER_PAGE, type=int)
+        page = request.args.get("pages", 1, type=int)
+        current_index = page - 1
+        start_page = (page - 1) * QUESTIONS_PER_PAGE
+        end_page = start_page + QUESTIONS_PER_PAGE
+        ques_result = []
+        questions_query = Question.query.order_by(
+                Question.id
+            ).limit(items_limit).offset(current_index * items_limit).all()
+        formatted_questions = [
+            question_query.format() for question_query in questions_query
+            ]
+        categories_query = Category.query.all()
+        cat_result = {}
+        for category_query in categories_query:
+            cat_result[category_query.id] = category_query.type
+        if len(formatted_questions[start_page:end_page]) != 0:
+            result = {
+                "questions": formatted_questions,
+                "total_questions": len(questions_query),
+                "current_category": "",
+                "categories": cat_result
+            }
+            return jsonify(result)
+        else:
+            abort(404)
 
     """
     @TODO:
