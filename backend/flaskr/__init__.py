@@ -54,7 +54,6 @@ def create_app(test_config=None):
         current_index = page - 1
         start_page = (page - 1) * QUESTIONS_PER_PAGE
         end_page = start_page + QUESTIONS_PER_PAGE
-        ques_result = []
         questions = Question.query.order_by(
                 Question.id
             ).limit(items_limit).offset(current_index * items_limit).all()
@@ -95,7 +94,7 @@ def create_app(test_config=None):
     """
     
     @app.route('/questions', methods=['POST'])
-    def create_question():
+    def createQuestion():
         body = request.get_json()
         question = Question(
             question = body.get('question', None), 
@@ -139,25 +138,56 @@ def create_app(test_config=None):
         return jsonify(result)
 
     """
-    @TODO:
-    Create a GET endpoint to get questions based on category.
-
-    TEST: In the "List" tab / main screen, clicking on one of the
-    categories in the left column will cause only questions of that
-    category to be shown.
+    GET endpoint to get questions based on category.
     """
+    @app.route("/categories/<int:id>/questions")
+    def getQuestionsByCategory(id):
+        ques_result = []
+        questions = Question.query.filter(Question.category == str(id)).all()
+        formatted_questions = [ question.format() for question in questions ]
+        categories = Category.query.all()
+        currentCategory = Category.query.filter(Category.id == id).first().type
+        categoriesWithType = {}
+        for category in categories:
+            categoriesWithType[category.id] = category.type
+        result = {
+            "questions": formatted_questions,
+            "total_questions": len(questions),
+            "current_category": currentCategory,
+            "categories": categoriesWithType
+        }
+    
+        return jsonify(result)
 
     """
-    @TODO:
-    Create a POST endpoint to get questions to play the quiz.
-    This endpoint should take category and previous question parameters
-    and return a random questions within the given category,
-    if provided, and that is not one of the previous questions.
-
-    TEST: In the "Play" tab, after a user selects "All" or a category,
-    one question at a time is displayed, the user is allowed to answer
-    and shown whether they were correct or not.
+    POST endpoint to get questions to play the quiz.
     """
+    @app.route("/quizzes", methods=["POST"])
+    def quizizz():
+        request_quiz = request.get_json()
+        prevId = request_quiz["previous_questions"]
+        category = request_quiz["quiz_category"]["id"]
+
+        if category == 0:
+            questions = Question.query.all()
+        else:
+            questions = Question.query.filter(Question.category == str(category)).all()
+
+        ids = [ question.id for question in questions ]
+        resIds = list(set(ids) - set(prevId))
+        if resIds == []:
+            question = ""
+        else:
+            current = Question.query.filter(
+                Question.id == int(random.choice(resIds))
+                ).first()
+            question = {
+                "id": current.id,
+                "question": current.question,
+                "answer": current.answer
+            }
+
+        return jsonify({"question": question})
 
     """
     @TODO:
