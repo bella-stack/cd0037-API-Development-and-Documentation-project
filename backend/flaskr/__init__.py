@@ -190,10 +190,39 @@ def create_app(test_config=None):
         return jsonify({"question": question})
 
     """
-    @TODO:
-    Create error handlers for all expected errors
-    including 404 and 422.
+    error handlers for all expected errors
     """
+    @app.errorhandler(400)
+    def question_not_found(error):
+        return jsonify({
+            "success": False,
+            "error": 400,
+            "message": "No Categories Has Been Found"
+        }), 400
+
+    @app.errorhandler(404)
+    def question_not_found(error):
+        return jsonify({
+            "success": False,
+            "error": 404,
+            "message": "This Question Not Found"
+        }), 404
+
+    @app.errorhandler(422)
+    def question_not_found(error):
+        return jsonify({
+            "success": False,
+            "error": 422,
+            "message": "Can't Process Your Data"
+        }), 422
+
+    @app.errorhandler(500)
+    def question_not_found(error):
+        return jsonify({
+            "success": False,
+            "error": 500,
+            "message": "There is an Error in Server"
+        }), 500
 
     return app
 
